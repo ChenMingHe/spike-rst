@@ -1,0 +1,158 @@
+#! /usr/bin/env ruby
+
+require 'optparse'
+require 'yaml'
+
+USAGE =
+    "USAGE:
+    rst test --plugin <name> --script <name-list>
+example:
+    rst test --plugin spike_send_tcp
+    rst test --plugin spike_send_tcp --script t01.spk
+
+"
+
+command = nil
+options = {}
+OptionParser.new do |opts|
+  opts.banner = USAGE
+  opts.separator "argument"
+  opts.on("-p", "--plugin <name>", "plugin name") do |name| options[:plugin_name] = name end
+  opts.on("-s", "-script <name-list>", Array, "Select encoding") do |list| options[:script_name] = list end
+
+end.parse!
+
+if options[:plugin_name].nil?
+  STDERR.puts USAGE
+  exit 1
+end
+
+command = options[:script_name].nil? ? "test_default" : "test_local"
+
+module RstTest
+  def self.test_local options
+    # 初始化插件加载路径
+    plugin_name = options[:plugin_name]
+    plugin_launch = init_plugin_launch(plugin_name)
+
+    # 初始化脚本目录
+    base_dir = `pwd`
+    base_dir = base_dir.delete("\n")
+
+    # 加载配置
+    host, plugin_args, port, skip_str, skip_var = init_plugin_args(plugin_name)
+
+    # 获取运行脚本
+    script_list = options[:script_name]
+
+    # 初始化剩余参数
+    options.delete("test_scripts")
+    options.delete("ignore_scripts")
+    other_args = init_user_arguments(plugin_args)
+
+    run(base_dir, host, other_args, plugin_launch, port, script_list, skip_str, skip_var)
+  end
+
+
+
+
+  def self.test_default options
+    # 初始化插件加载路径
+    plugin_name = options[:plugin_name]
+    plugin_launch = init_plugin_launch(plugin_name)
+
+    # 初始化脚本目录
+    base_dir = File.expand_path(File.join("..", ".." , "script", plugin_name), File.dirname(__FILE__))
+
+    # 加载配置
+    host, plugin_args, port, skip_str, skip_var = init_plugin_args(plugin_name)
+
+    # 获取运行脚本
+    script_list = get_script_list(base_dir, plugin_args)
+
+    # 初始化剩余参数
+    other_args = init_user_arguments(plugin_args)
+
+    run(base_dir, host, other_args, plugin_launch, port, script_list, skip_str, skip_var)
+  end
+
+  private
+
+  def self.run(base_dir, host, other_args, plugin_launch, port, script_list, skip_str, skip_var)
+    script_list.each do |script|
+      script_file = File.join(base_dir, script)
+      if File.exist? script_file
+        cmd = "#{plugin_launch} #{host} #{port} #{script_file} #{skip_var} #{skip_str} #{other_args}"
+        id = fork do
+          exec(cmd)
+        end
+        pid, status = Process.waitpid2(id)
+      end
+    end
+  end
+
+  def self.init_user_arguments(plugin_args)
+    plugin_args.delete("plugin_name")
+    other_args = String.new
+    plugin_args.each_value do |value|
+      other_args << " "
+      other_args << value.to_s
+    end
+    other_args
+  end
+
+  def self.get_script_list(base_dir, plugin_args)
+    script_list = Array.new
+    if plugin_args["test_scripts"].nil? or (plugin_args["test_scripts"].is_a?(String) and plugin_args["test_scripts"] == "all")
+      Dir.foreach(base_dir) do |script_name|
+        script_list.push script_name if script_name != "." and script_name != ".."
+      end
+    elsif  !plugin_args["test_scripts"].nil? and plugin_args["test_scripts"].is_a?(Hash)
+      plugin_args["test_scripts"].each_key do |script_name|
+        script_list.push script_name
+      end
+    end
+    plugin_args.delete("test_scripts")
+
+    # 获取忽略脚本
+    script_ignore = Array.new
+    if !plugin_args["ignore_scripts"].nil? and plugin_args["ignore_scripts"].is_a?(Hash)
+      plugin_args["ignore_scripts"].each_key do |script_name|
+        script_ignore.push script_name
+      end
+    end
+    plugin_args.delete("ignore_scripts")
+
+    # 得到最终运行脚本列表
+    script_list = script_list - script_ignore
+  end
+
+  def self.init_plugin_args(plugin_name)
+    plugin_config_file = File.expand_path(File.join("..", "..", "plugin", "config", "#{plugin_name}.yml"), File.dirname(__FILE__))
+    plugin_args = YAML.load_file(plugin_config_file) if File.exist? plugin_config_file
+
+    # 初始化基本参数
+    host = plugin_args["host"] unless plugin_args["host"].nil?
+    port = plugin_args["port"] unless plugin_args["port"].nil?
+    skip_var = plugin_args["skipvar"] unless plugin_args["skipvar"].nil?
+    skip_str = plugin_args["skipstr"] unless plugin_args["skipstr"].nil?
+    plugin_args.delete("host")
+    plugin_args.delete("port")
+    plugin_args.delete("skipvar")
+    plugin_args.delete("skipstr")
+    return host, plugin_args, port, skip_str, skip_var
+  end
+
+  def self.init_plugin_launch(plugin_name)
+    plugin_launch = File.expand_path(File.join("..", "..", "plugin", "#{plugin_name}"), File.dirname(__FILE__))
+    unless File.exist? plugin_launch
+      STDERR.puts "can not load plugin #{plugin_name}"
+      exit 1
+    end
+    plugin_launch
+  end
+end
+
+if RstTest.respond_to? command
+  RstTest.send(command, options)
+end

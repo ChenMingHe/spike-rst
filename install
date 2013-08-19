@@ -1,0 +1,54 @@
+#! /bin/bash 
+
+set -o errexit
+
+function run_cmd () {
+  sudo $*
+}
+
+cd src
+echo "清理ing...."
+if [[ -f Makefile ]]; then
+  make clean
+fi
+
+echo "配置ing...."
+./configure > /dev/null
+sed -i  "s/^CFLAGS.*ggdb$/& -fno-stack-protector/g" Makefile
+
+echo "编译ing...."
+make > /dev/null
+
+if [[ -f libdlrpc.so ]]; then 
+  echo "安装动态库"
+  run_cmd cp libdlrpc.so /lib/
+else
+  echo "Error ： 找不到动态库libdlrpc.so"
+  exit 1
+fi
+cd ..
+
+if ! [[ -f `which ruby` ]]; then 
+  echo "安装ruby环境"
+  run_cmd apt-get update
+  run_cmd apt-get install ruby1.9.3
+fi
+
+[[ -d $HOME/opt ]] || mkdir $HOME/opt
+if ! [[ -d $HOME/opt/rst ]]; then
+  echo "安装rst"
+  cp -r ./rst $HOME/opt/
+
+  echo "添加rst命令到系统环境"
+  RST_HOME=$HOME/opt/rst/bin
+  echo 'export PATH=$PATH:'"$RST_HOME" >> $HOME/.bash_profile
+  source $HOME/.bash_profile 
+fi
+
+echo "安装默认rst插件"
+cd src
+$HOME/opt/rst/bin/rst env --install --plugin generic_send_tcp
+cd ..
+
+echo "安装完成，重启终端后可以使用rst命令"
+echo "或者使用 source $HOME/.bash_profile 使命令生效"

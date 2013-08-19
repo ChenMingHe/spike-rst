@@ -1,0 +1,22 @@
+#! /usr/bin/env ruby
+
+USAGE_MSG =
+"USAGE：
+    rst {env|test|check} <options>
+    rst {env|test|check} --help
+"
+command = ARGV[0] ? ARGV.shift.downcase : nil
+if command.nil? || ! %w[env test check].include?(command)
+  STDERR.puts USAGE_MSG
+  exit 1
+end
+
+lanch_file = File.expand_path(File.join("command", "rst_#{command}"), File.dirname(__FILE__))
+cmd = "ruby #{lanch_file} #{ARGV.join(" ")}"
+exec(cmd)
+
+
+
+
+
+

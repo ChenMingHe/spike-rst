@@ -1,0 +1,154 @@
+#! /usr/bin/env ruby
+
+require 'optparse'
+
+USAGE =
+    "USAGE:
+    rst env <options> <argument>
+
+example:
+add new script [t01.spk] in plugin [spike_send_tcp]
+    rst env --add --plugin spike_send_tcp --script t01.spk
+delete script [t01.spk] in plugin [spike_send_tcp]
+    rst env --delete --plugin spike_send_tcp --script t01.spk
+install new plugin [spike_send_tcp]
+    rst env --install --plugin spike_send_tcp
+uninstall plugin [spike_send_tcp]
+    rst env --unstall --plugin spike_send_tcp
+config plugin [spike_send_tcp]
+    rst env --config --plugin spike_send_tcp
+    (it needed new config file name spike_send_tcp.yml in local directory)
+
+"
+
+command = nil
+options = {}
+OptionParser.new do |opts|
+  opts.banner = USAGE
+  opts.separator "options"
+  opts.on("-a", "--add", "add new script") do command = "add_script" end
+  opts.on("-d", "--delete", "delete exist script") do command = "delete_script" end
+  opts.on("-i", "--install", "install new plugin") do command = "install_plugin" end
+  opts.on("-u", "--uninstall", "uninstall exist plugin") do command = "uninstall_plugin" end
+  opts.on("-c", "--config", "set plugin config file") do command = "config_plugin" end
+
+  opts.separator ""
+  opts.separator "argument"
+  opts.on("-p", "--plugin <name>", Array, "plugin name") do |name| options[:plugin_name] = name end
+  opts.on("-s", "--script <name-list>", Array, "script name") do |list| options[:script_name] = list end
+
+end.parse!
+
+if command.nil?
+  STDERR.puts USAGE
+  exit 1
+end
+
+module RstEnv
+  # 为特定插件添加一组新的脚本
+  def self.add_script options
+    plugin_name = options[:plugin_name]
+    if plugin_name.nil?
+      STDERR.puts USAGE
+      exit 1
+    end
+    unless File.exist?(File.expand_path(File.join("..", "..", "plugin", plugin_name), File.dirname(__FILE__)))
+      STDERR.puts "ERROR : #{plugin_name} does not exist"
+      exit 1
+    end
+
+    script_dir_name = File.expand_path(File.join("..", "..", "script", "#{plugin_name}"), File.dirname(__FILE__))
+    Dir.mkdir(script_dir_name) unless  File.exist?(script_dir_name)
+
+    unless options[:script_name].nil?
+      STDOUT.puts "#{plugin_name} : add new script #{options[:script_name].join(" ")}"
+      options[:script_name].each do |script_name|
+        unless File.exist?(script_name)
+          STDERR.puts "Warring : #{script_name} does not exist"
+        else
+          `cp #{script_name} #{script_dir_name}` unless script_name.nil?
+        end
+      end
+    else
+      STDERR.puts "no any available scipts, please add argument '-s script'"
+    end
+
+  end
+
+  # 为特定插件删除一组脚本
+  def self.delete_script options
+    plugin_name = options[:plugin_name]
+    if plugin_name.nil?
+      STDERR.puts USAGE
+      exit 1
+    end
+
+    script_dir_name = File.expand_path(File.join("..", "..", "script", "#{plugin_name}"), File.dirname(__FILE__))
+    unless  File.exist?(script_dir_name)
+      STDERR.puts "plugin #{plugin_name} does not has any script"
+      exit 1
+    end
+
+    options[:script_name].each do |script_name|
+      unless File.exist?(script_name)
+        STDERR.puts "Warring : #{script_name} does not exist"
+      else
+        `rm #{script_dir_name}/#{script_name}`
+      end
+    end
+  end
+
+  # 安装一组插件
+  def self.install_plugin options
+    plugin_dir = File.expand_path(File.join("..", "..", "plugin"), File.dirname(__FILE__))
+    Dir.mkdir("#{plugin_dir}") unless File.exist?("#{plugin_dir}")
+    Dir.mkdir("#{plugin_dir}/config") unless File.exist?("#{plugin_dir}/config")
+
+    STDOUT.puts "install plugin : #{options[:plugin_name].join(" ")}"
+    options[:plugin_name].each do |plugin_name|
+      unless File.exist?("#{plugin_name}")
+        STDERR.puts "Warring : #{plugin_name} does not exist"
+      else
+        `cp #{plugin_name} #{plugin_dir}/#{plugin_name}`
+      end
+
+      unless File.exist?("#{plugin_name}.yml")
+        STDERR.puts "Warring : #{plugin_name}.yml does not exist"
+      else
+        `cp #{plugin_name}.yml #{plugin_dir}/config/#{plugin_name}.yml`
+      end
+    end
+  end
+
+  # 卸载一组插件
+  def self.uninstall_plugin options
+    plugin_dir = File.expand_path(File.join("..", "..", "plugin"), File.dirname(__FILE__))
+
+    STDOUT.puts "uninstall plugin : #{options[:plugin_name].join(" ")}"
+    options[:plugin_name].each do |plugin_name|
+      script_dir_name = File.expand_path(File.join("..", "..", "script", "#{plugin_name}"), File.dirname(__FILE__))
+      `rm #{plugin_dir}/#{plugin_name}` if File.exist?("#{plugin_dir}/#{plugin_name}")
+      `rm #{plugin_dir}/config/#{plugin_name}.yml` if File.exist?("#{plugin_dir}/config/#{plugin_name}.yml")
+      `rm -r #{script_dir_name}` if File.exist?(script_dir_name)
+    end
+  end
+
+  # 为一组插件添加配置文件
+  def self.config_plugin options
+    plugin_dir = File.expand_path(File.join("..", "..", "plugin"), File.dirname(__FILE__))
+
+    STDOUT.puts "set new config : #{options[:plugin_name].join(" ")}"
+    options[:plugin_name].each do |plugin_name|
+      unless File.exist?("#{plugin_name}.yml")
+        STDERR.puts "Warring : #{plugin_name}.yml does not exist"
+      else
+        `cp #{plugin_name}.yml #{plugin_dir}/config`
+      end
+    end
+  end
+
+end
+
+if RstEnv.respond_to? command
+  RstEnv.send(command, options)
+end

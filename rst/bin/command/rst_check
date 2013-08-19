@@ -1,0 +1,94 @@
+#! /usr/bin/env ruby
+
+require 'optparse'
+
+USAGE =
+    "USAGE:
+    rst check <options> <argument>
+
+example:
+show plugin [spike_send_tcp] config file detail
+    rst check --config --plugin spike_send_tcp
+show plugin [spike_send_tcp] test [t01.spk] file detail
+    rst check --test --plugin spike_send_tcp --script t01.spk
+list all available plugins
+    rst check --list
+list all available scripts of plugin [spike_send_tcp]
+    rst check --all --plugin spike_send_tcp
+
+"
+
+command = nil
+options = {}
+OptionParser.new do |opts|
+  opts.banner = USAGE
+  opts.separator "options"
+  opts.on("-c", "--config", "show plugin config file") do command = "check_config" end
+  opts.on("-t", "--test", "show plugin test script") do command = "check_script" end
+  opts.on("-l", "--list", "list all available plugins") do command = "list_plugins" end
+  opts.on("-a", "--all", "list all available scripts of plugin") do command = "list_script" end
+
+  opts.separator ""
+  opts.separator "argument"
+  opts.on("-p", "--plugin <name>", "plugin name") do |name| options[:plugin_name] = name end
+  opts.on("-s", "--script <name>", "script name") do |name| options[:script_name] = name end
+
+end.parse!
+
+if command.nil?
+  STDERR.puts USAGE
+  exit 1
+end
+
+module RstCheck
+  # 查看特定插件的配置信息
+  def self.check_config options
+    plugin_name = options[:plugin_name]
+    nil_exit(plugin_name, USAGE)
+
+    plugin_dir = File.expand_path(File.join("..", "..", "plugin", "config"), File.dirname(__FILE__))
+    STDOUT.puts `cat #{plugin_dir}/#{plugin_name}.yml`
+  end
+
+  # 查看特定插件的特定配置脚本
+  def self.check_script options
+    script_name = options[:script_name]
+    plugin_name = options[:plugin_name]
+    nil_exit(script_name, USAGE)
+    nil_exit(plugin_name, USAGE)
+
+    script_dir = File.expand_path(File.join("..", "..", "script", "#{plugin_name}"), File.dirname(__FILE__))
+    Dir.mkdir(script_dir) unless  File.exist?(script_dir)
+
+    STDOUT.puts `cat #{script_dir}/#{script_name}`
+  end
+
+  # 查看所有可用插件
+  def self.list_plugins options
+    plugin_dir = File.expand_path(File.join("..", "..", "plugin"), File.dirname(__FILE__))
+    STDOUT.puts `ls #{plugin_dir} | grep "[^(config)]" | sort`
+  end
+
+  # 查看特定插件的所有配置脚本文件
+  def self.list_script options
+    plugin_name = options[:plugin_name]
+    nil_exit(plugin_name, USAGE)
+
+    script_dir = File.expand_path(File.join("..", "..", "script", "#{plugin_name}"), File.dirname(__FILE__))
+    Dir.mkdir(script_dir) unless  File.exist?(script_dir)
+
+    STDOUT.puts `ls #{script_dir} | sort`
+  end
+
+  private
+  def self.nil_exit name, msg
+    if name.nil?
+      STDERR.puts msg
+      exit 1
+    end
+  end
+end
+
+if RstCheck.respond_to? command
+  RstCheck.send(command, options)
+end

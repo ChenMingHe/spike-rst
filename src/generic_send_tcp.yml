@@ -1,0 +1,29 @@
+---
+# 插件名称，可选
+plugin_name: spike_send_tcp
+
+# 如果希望测试全部脚本，则使用下面配置
+test_scripts: all
+
+# 如果希望使用部门测试脚本，则使用下列配置
+#test_scripts:
+#  - 01.spk
+#  - 02.spk
+#  - 03.spk
+
+# 如果希望忽略某些配置脚本，则使用下列配置
+#ignore_scripts:
+#  - 01.spk
+#  - 05.spk
+
+# 测试目标主机IP地址
+host: 192.168.1.105
+
+# 测试目标主机端口号
+port: 6000
+
+
+# 其他参数
+skipvar: 0
+skipstr: 0
+
