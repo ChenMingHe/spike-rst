@@ -7,17 +7,17 @@ USAGE =
     rst env <options> <argument>
 
 example:
-add new script [t01.spk] in plugin [spike_send_tcp]
+  为插件[spike_send_tcp]添加一个测试脚本，多个脚本用 , 分隔
     rst env --add --plugin spike_send_tcp --script t01.spk
-delete script [t01.spk] in plugin [spike_send_tcp]
+  删除插件[spike_send_tcp]下的指定测试脚本，多个脚本用 , 分隔
     rst env --delete --plugin spike_send_tcp --script t01.spk
-install new plugin [spike_send_tcp]
+  安装新的插件[spike_send_tcp]， 多个插件使用 , 分隔
     rst env --install --plugin spike_send_tcp
-uninstall plugin [spike_send_tcp]
+  卸载已有插件[spike_send_tcp]，多个插件间使用 , 分隔
     rst env --unstall --plugin spike_send_tcp
-config plugin [spike_send_tcp]
+  设置新的插件配置
     rst env --config --plugin spike_send_tcp
-    (it needed new config file name spike_send_tcp.yml in local directory)
+    (需要当前目录下必须有同名的yml文件[spike_send_tcp.yml])
 
 "
 
@@ -26,16 +26,16 @@ options = {}
 OptionParser.new do |opts|
   opts.banner = USAGE
   opts.separator "options"
-  opts.on("-a", "--add", "add new script") do command = "add_script" end
-  opts.on("-d", "--delete", "delete exist script") do command = "delete_script" end
-  opts.on("-i", "--install", "install new plugin") do command = "install_plugin" end
-  opts.on("-u", "--uninstall", "uninstall exist plugin") do command = "uninstall_plugin" end
-  opts.on("-c", "--config", "set plugin config file") do command = "config_plugin" end
+  opts.on("-a", "--add", "添加脚本") do command = "add_script" end
+  opts.on("-d", "--delete", "删除脚本") do command = "delete_script" end
+  opts.on("-i", "--install", "安装插件") do command = "install_plugin" end
+  opts.on("-u", "--uninstall", "卸载插件") do command = "uninstall_plugin" end
+  opts.on("-c", "--config", "更新插件配置") do command = "config_plugin" end
 
   opts.separator ""
   opts.separator "argument"
-  opts.on("-p", "--plugin <name>", Array, "plugin name") do |name| options[:plugin_name] = name end
-  opts.on("-s", "--script <name-list>", Array, "script name") do |list| options[:script_name] = list end
+  opts.on("-p", "--plugin <name>", Array, "插件名称列表") do |name| options[:plugin_name] = name end
+  opts.on("-s", "--script <name-list>", Array, "脚本文件列表") do |list| options[:script_name] = list end
 
 end.parse!
 

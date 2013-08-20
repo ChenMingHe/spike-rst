@@ -7,13 +7,13 @@ USAGE =
     rst check <options> <argument>
 
 example:
-show plugin [spike_send_tcp] config file detail
+  查看插件配置文件信息
     rst check --config --plugin spike_send_tcp
-show plugin [spike_send_tcp] test [t01.spk] file detail
+  查看插件测试脚本信息
     rst check --test --plugin spike_send_tcp --script t01.spk
-list all available plugins
+  查看所有可用插件
     rst check --list
-list all available scripts of plugin [spike_send_tcp]
+  查看插件的测试脚本列表
     rst check --all --plugin spike_send_tcp
 
 "
