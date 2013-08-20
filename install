@@ -47,7 +47,7 @@ fi
 
 echo "安装默认rst插件"
 cd src
-$HOME/opt/rst/bin/rst env --install --plugin generic_send_tcp
+$HOME/opt/rst/bin/rst env --install --plugin generic_send_tcp,generic_listen_tcp
 cd ..
 
 echo "安装完成，重启终端后可以使用rst命令"

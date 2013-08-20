@@ -1,28 +1,28 @@
 ---
-# 插件名称，可选
-plugin_name: spike_send_tcp
+# 参数配置方法
+# script：必须配置，如果不需要，可指定其index为0
+# index: 表明参数位置，如果不配置，或者配置为0，则这个参数会被忽略
+plugin_name:
+  index: 0
+  value: plugin_example 
 
-# 测试目标主机IP地址
-host: 192.168.1.105
+args_first: 
+  index: 1
+  value: first_args 
 
-# 测试目标主机端口号
-port: 6000
+args_second: 
+  index: 2
+  value: 6000
 
-# 如果希望测试全部脚本，则使用下面配置
-#test_scripts: all
+# 脚本参数配置
+script:
+  index: 3
+  test_scripts: all
+  ignore_scripts:
+    - 02.spk
+    - 04.spk
 
-# 如果希望使用部门测试脚本，则使用下列配置
-#test_scripts:
-#  - 01.spk
-#  - 02.spk
-#  - 03.spk
-
-# 如果希望忽略某些配置脚本，则使用下列配置
-#ignore_scripts:
-#  - 01.spk
-#  - 05.spk
-
-# 其他参数
-skipvar: 0
-skipstr: 0
+args_third: 
+  index: 4
+  value: args_third
 

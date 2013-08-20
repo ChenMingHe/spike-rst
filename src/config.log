@@ -351,9 +351,9 @@ configure:4169: $? = 0
 configure:4180: result: yes
 configure:4187: checking for _doprnt
 configure:4237: gcc -o conftest -g -O2   conftest.c -lssl -lc  >&5
-/tmp/ccLVpgmF.o: In function `main':
+/tmp/cc3wW7xe.o: In function `main':
 /home/cf/opt/spike/src/configure:4253: undefined reference to `_doprnt'
-/tmp/ccLVpgmF.o:(.data+0x0): undefined reference to `_doprnt'
+/tmp/cc3wW7xe.o:(.data+0x0): undefined reference to `_doprnt'
 collect2: ld returned 1 exit status
 configure:4240: $? = 1
 configure: failed program was:

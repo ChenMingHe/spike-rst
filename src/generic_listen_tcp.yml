@@ -4,12 +4,7 @@
 # index: 表明参数位置，如果不配置，或者配置为0，则这个参数会被忽略
 plugin_name:
   index: 0
-  value: generic_send_tcp
-
-# 测试目标主机IP地址
-host: 
-  index: 1
-  value: 192.168.1.105
+  value: generic_listen_tcp 
 
 # 测试目标主机端口号
 port: 
@@ -24,11 +19,3 @@ script:
     - 02.spk
     - 04.spk
 
-# 其他参数
-skipvar: 
-  index: 4
-  value: 0
-
-skipstr: 
-  index: 5
-  value: 0
